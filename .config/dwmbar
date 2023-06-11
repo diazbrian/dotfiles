@@ -1,0 +1,72 @@
+#!/bin/sh
+
+dte(){
+	dte="$(date +"%b %d %Y, %R")"
+	echo "$dte"
+}
+
+vol(){
+    volstat="$(amixer -D pulse get Master | awk -F '[][]' 'END{print $4}')"
+    vol="$(amixer -D pulse get Master | awk -F '[][]' 'END{print $2}' | tr -d "%")"
+
+    if [ "$volstat" = "on" ]; then
+
+        if [ $vol -ge 50 ]; then
+            echo " $vol%"
+        elif [ $vol -lt 50 ]; then
+            echo " $vol%"
+        fi
+
+    else
+        echo " off"
+    fi
+}
+
+bat(){
+	battery="$(cat /sys/class/power_supply/BAT0/capacity)"
+	stat="$(cat /sys/class/power_supply/BAT0/status)"
+
+	if [ "$stat" = "Charging" ]; then 
+		stat="󱐋"
+    elif [ $battery -ge 96 ] && [ $battery -le 100 ]; then
+        stat="󰁹"
+    elif [ $battery -ge 90 ] && [ $battery -le 95 ]; then
+        stat="󰂂"
+    elif [ $battery -ge 80 ] && [ $battery -le 89 ]; then
+        stat="󰂁"
+    elif [ $battery -ge 70 ] && [ $battery -le 79 ]; then
+        stat="󰂀"
+    elif [ $battery -ge 60 ] && [ $battery -le 69 ]; then
+        stat="󰁿" 
+    elif [ $battery -ge 50 ] && [ $battery -le 59 ]; then
+        stat="󰁾"
+    elif [ $battery -ge 40 ] && [ $battery -le 49 ]; then
+        stat="󰁽"
+    elif [ $battery -ge 30 ] && [ $battery -le 39 ]; then
+        stat="󰁼"
+    elif [ $battery -ge 20 ] && [ $battery -le 29 ]; then
+        stat="󰁻"
+    elif [ $battery -ge 10 ] && [ $battery -le 19 ]; then
+        stat="󰁺"
+    elif [ $battery -ge 1 ] && [ $battery -le 9 ]; then
+        stat="󰂃"
+	fi
+
+    echo "$stat $battery%"
+}
+
+mem(){
+	used="$(free -m | awk '/Mem:/ {printf $3}')"
+	total="$(free -m | awk '/Mem:/ {printf $2}')"
+
+	echo "󰍛 $((used*100/total))%"
+}
+
+status(){
+    echo "$(mem) | $(vol) | $(bat) | $(dte)"
+}
+
+while true; do
+	xsetroot -name "$(status)"
+	sleep 1
+done
