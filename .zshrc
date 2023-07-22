@@ -1,36 +1,29 @@
-# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
-# Initialization code that may require console input (password prompts, [y/n]
-# confirmations, etc.) must go above this block; everything else may go below.
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
-fi
-
-# Keep 1000 lines of history within the shell and save it to ~/.zsh_history:
-HISTSIZE=1000
-SAVEHIST=1000
-HISTFILE=~/.zsh_history
+# Enable colors and change prompt:
+autoload -U colors && colors
+# PS1="%B%{$fg[magenta]%}[%{$fg[green]%}%n%{$fg[green]%}@%{$fg[green]%}%M %{$fg[magenta]%}%8~%{$fg[magenta]%}]%b"
 
 # Set up the prompt
-
-# autoload -Uz promptinit
-# promptinit
-# prompt adam1
+if [[ $EUID -ne 0 ]]; then
+	PS1="%B%F{magenta}[%F{green}%n%F{green}@%F{green}%M %F{cyan}%8~%F{magenta}]%f%b"
+else
+	PS1="%B%F{magenta}[%F{red}%n%F{red}@%F{red}%M %F{cyan}%8~%F{magenta}]%f%b"
+fi
 
 setopt histignorealldups sharehistory
 
 # Use emacs keybindings even if our EDITOR is set to vi
 bindkey -e
 
-# Use modern completion system
-# autoload -Uz compinit
-# compinit
+# Keep 1000 lines of history within the shell and save it to ~/.zsh_history:
+HISTSIZE=8000
+SAVEHIST=4000
+HISTFILE=~/.zsh_history
 
+# Use modern completion system
 autoload -Uz compinit
 zmodload zsh/complist
 compinit
 _comp_options+=(globdots)
-
-# Use vi keys in tab complete menu
 
 zstyle ':completion:*' auto-description 'specify: %d'
 zstyle ':completion:*' completer _expand _complete _correct _approximate
@@ -50,34 +43,68 @@ zstyle ':completion:*' verbose true
 zstyle ':completion:*:*:kill:*:processes' list-colors '=(#b) #([0-9]#)*=0=01;31'
 zstyle ':completion:*:kill:*' command 'ps -u $USER -o pid,%cpu,tty,cputime,cmd'
 
+# Use vi keys in tab complete menu
 bindkey -M menuselect 'h' vi-backward-char
 bindkey -M menuselect 'j' vi-down-line-or-history
 bindkey -M menuselect 'k' vi-up-line-or-history
 bindkey -M menuselect 'l' vi-forward-char
 
-# Manual Aliases
+# Aliases
 alias ls='lsd'
-alias l='lsd'
 alias ll='ls -l'
-alias lla='ls -la'
+alias lla='ls -lA'
 alias la='ls -A'
 alias ld='ls --group-directories-first'
 alias lt='ls --tree'
-alias cat='batcat --pager=never'
-alias confdwm='vi ~/suckless/dwm/config.def.h'
+alias grep='grep --color=auto'
+alias cat='batcat --style numbers --paging never'
 alias radio="mpg123 http://69.64.46.123:8108/"
-alias h='--help'
 
 # Plugins
 source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
-# source /usr/share/zsh-sudo/sudo.plugin.zsh
-source ~/powerlevel10k/powerlevel10k.zsh-theme
+source ~/.config/gitstatus/gitstatus.prompt.zsh
+source ~/.config/timer.plugin.zsh
 
-# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+# shell status after gitstatus plugin
+PROMPT+=' %(?.%B%#%b.%F{red}%B%#%b%f) '
 
+# built in transient prompt
+zle-line-init() {
+	emulate -L zsh
 
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+	[[ $CONTEXT == start ]] || return 0
 
-export TERM=xterm-256color
+	while true; do
+		zle .recursive-edit
+		local -i ret=$?
+		[[ $ret == 0 && $KEYS == $'\4' ]] || break
+		[[ -o ignore_eof ]] || exit 0
+	done
+
+	local saved_prompt=$PROMPT
+	# local saved_rprompt=$RPROMPT
+	PROMPT='%B%#%b '
+	# RPROMPT=''
+	zle .reset-prompt
+	PROMPT=$saved_prompt
+	# RPROMPT=$saved_rprompt
+
+	if (( ret )); then
+		zle .send-break
+	else
+		zle .accept-line
+	fi
+	return ret
+}
+
+zle -N zle-line-init
+
+# export TERM=xterm-256color
+
+if command -v tmux &> /dev/null && [ -n "$PS1" ] && [[ ! "$TERM" =~ screen ]] && [[ ! "$TERM" =~ tmux ]] && [ -z "$TMUX" ]; then
+  exec tmux
+  # exec tmux new-session -A -s main
+fi
+
+echo -e -n "\x1b[\x31 q" # Blink cursor
