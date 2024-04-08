@@ -1,6 +1,5 @@
 # Enable colors and change prompt:
 autoload -U colors && colors
-# PS1="%B%{$fg[magenta]%}[%{$fg[green]%}%n%{$fg[green]%}@%{$fg[green]%}%M %{$fg[magenta]%}%8~%{$fg[magenta]%}]%b"
 
 # Set up the prompt
 if [[ $EUID -ne 0 ]]; then
@@ -48,6 +47,9 @@ bindkey -M menuselect 'h' vi-backward-char
 bindkey -M menuselect 'j' vi-down-line-or-history
 bindkey -M menuselect 'k' vi-up-line-or-history
 bindkey -M menuselect 'l' vi-forward-char
+
+autoload -Uz select-word-style
+select-word-style bash
 
 # Aliases
 alias ls='lsd'
@@ -102,9 +104,9 @@ zle -N zle-line-init
 
 # export TERM=xterm-256color
 
-if command -v tmux &> /dev/null && [ -n "$PS1" ] && [[ ! "$TERM" =~ screen ]] && [[ ! "$TERM" =~ tmux ]] && [ -z "$TMUX" ]; then
-  exec tmux
-  # exec tmux new-session -A -s main
-fi
+# if command -v tmux &> /dev/null && [ -n "$PS1" ] && [[ ! "$TERM" =~ screen ]] && [[ ! "$TERM" =~ tmux ]] && [ -z "$TMUX" ]; then
+#   exec tmux
+#   # exec tmux new-session -A -s main
+# fi
 
-echo -e -n "\x1b[\x31 q" # Blink cursor
+export EDITOR=vi
